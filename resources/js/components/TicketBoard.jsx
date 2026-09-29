@@ -288,6 +288,14 @@ export default function TicketBoard({ tickets, onMove, onUpdated }) {
                                                     </span>
                                                 ) : null}
                                             </button>
+                                            {coding ? (
+                                                <span
+                                                    aria-hidden="true"
+                                                    className={`coding-developing ${priority ? 'text-white/85' : 'text-ink/70'}`}
+                                                >
+                                                    <span className="coding-word">developing</span>
+                                                </span>
+                                            ) : null}
                                             <button
                                                 type="button"
                                                 data-card-action
@@ -296,7 +304,7 @@ export default function TicketBoard({ tickets, onMove, onUpdated }) {
                                                 disabled={!canCode}
                                                 onPointerDown={(event) => event.stopPropagation()}
                                                 onClick={() => toggleMark(ticket, 'is_coding')}
-                                                className={`ml-auto shrink-0 rounded-lg p-1.5 ${iconButton} ${
+                                                className={`${coding ? '' : 'ml-auto'} shrink-0 rounded-lg p-1.5 ${iconButton} ${
                                                     canCode ? 'cursor-pointer' : 'cursor-default opacity-80'
                                                 }`}
                                             >
