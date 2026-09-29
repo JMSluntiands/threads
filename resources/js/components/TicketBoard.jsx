@@ -177,7 +177,7 @@ export default function TicketBoard({ tickets, onMove, onUpdated }) {
                                     const unread = unreadCommentCount(ticket, user?.id, seen);
                                     const priority = Boolean(ticket.is_priority);
                                     const coding = Boolean(ticket.is_coding);
-                                    const canPrioritize = user?.id === ticket.user_id;
+                                    const canPrioritize = user?.id === ticket.user_id || user?.role === 'developer';
                                     const canCode = user?.role === 'developer';
                                     const iconButton = priority
                                         ? 'text-white hover:bg-white/10'
@@ -192,8 +192,12 @@ export default function TicketBoard({ tickets, onMove, onUpdated }) {
                                         onDragEnd={handleDragEnd}
                                         className={`cursor-pointer rounded-xl border p-3 shadow-sm transition ${
                                             priority
-                                                ? 'border-[#333333] bg-[#333333] text-white'
-                                                : 'border-black/10 bg-white hover:border-black/20'
+                                                ? coding
+                                                    ? 'border-2 border-white bg-[#333333] text-white'
+                                                    : 'border-[#333333] bg-[#333333] text-white'
+                                                : coding
+                                                  ? 'border-2 border-[#333333] bg-white'
+                                                  : 'border-black/10 bg-white hover:border-black/20'
                                         } ${draggingId === ticket.id ? 'cursor-grabbing opacity-40' : ''}`}
                                     >
                                         <div className="flex items-center gap-2.5">
@@ -292,13 +296,9 @@ export default function TicketBoard({ tickets, onMove, onUpdated }) {
                                                 disabled={!canCode}
                                                 onPointerDown={(event) => event.stopPropagation()}
                                                 onClick={() => toggleMark(ticket, 'is_coding')}
-                                                className={`ml-auto shrink-0 rounded-lg border p-1.5 ${iconButton} ${
-                                                    coding
-                                                        ? priority
-                                                            ? 'border-white'
-                                                            : 'border-[#333333]'
-                                                        : 'border-transparent'
-                                                } ${canCode ? 'cursor-pointer' : 'cursor-default opacity-80'}`}
+                                                className={`ml-auto shrink-0 rounded-lg p-1.5 ${iconButton} ${
+                                                    canCode ? 'cursor-pointer' : 'cursor-default opacity-80'
+                                                }`}
                                             >
                                                 <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 8l-4 4 4 4M16 8l4 4-4 4" />

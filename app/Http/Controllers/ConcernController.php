@@ -251,8 +251,8 @@ class ConcernController extends Controller
         $updates = [];
 
         if (array_key_exists('is_priority', $validated)) {
-            if ($concern->user_id !== $actor->id) {
-                abort(403, 'Only the ticket owner can set priority.');
+            if ($concern->user_id !== $actor->id && ! $actor->isDeveloper()) {
+                abort(403, 'Only the ticket owner or a developer can set priority.');
             }
 
             $updates['is_priority'] = $validated['is_priority'];
