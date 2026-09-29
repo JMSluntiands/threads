@@ -238,6 +238,49 @@ class ConcernController extends Controller
         ]);
     }
 
+    public function updateMarks(Request $request, Concern $concern): JsonResponse
+    {
+        $this->authorizeVisible($request, $concern);
+
+        $validated = $request->validate([
+            'is_priority' => ['sometimes', 'boolean'],
+            'is_coding' => ['sometimes', 'boolean'],
+        ]);
+
+        $actor = $request->user();
+        $updates = [];
+
+        if (array_key_exists('is_priority', $validated)) {
+            if ($concern->user_id !== $actor->id) {
+                abort(403, 'Only the ticket owner can set priority.');
+            }
+
+            $updates['is_priority'] = $validated['is_priority'];
+        }
+
+        if (array_key_exists('is_coding', $validated)) {
+            if (! $actor->isDeveloper()) {
+                abort(403, 'Only a developer can mark coding.');
+            }
+
+            $updates['is_coding'] = $validated['is_coding'];
+        }
+
+        if ($updates !== []) {
+            $concern->update($updates);
+        }
+
+        $concern->load([
+            'user:id,name,email,role,avatar_path',
+            'comments.user:id,name,email,role,avatar_path',
+        ]);
+
+        return response()->json([
+            'concern' => $this->transform($concern),
+            'message' => 'Ticket marks updated.',
+        ]);
+    }
+
     private function authorizeVisible(Request $request, Concern $concern): void
     {
         if (! $concern->isVisibleTo($request->user())) {
@@ -259,6 +302,8 @@ class ConcernController extends Controller
             'user_status' => $concern->user_status,
             'developer_status' => $concern->developer_status,
             'board_status' => $concern->board_status ?: 'pending',
+            'is_priority' => (bool) $concern->is_priority,
+            'is_coding' => (bool) $concern->is_coding,
             'allowed_user_transitions' => $concern->allowedUserTransitions(),
             'allowed_developer_transitions' => $concern->allowedDeveloperTransitions(),
             'image_url' => $imageUrl,

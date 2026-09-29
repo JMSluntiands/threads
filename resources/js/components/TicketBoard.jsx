@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../lib/api';
 import { markCommentsSeen, readCommentSeen, unreadCommentCount } from '../lib/commentSeen';
 import { BOARD_STATUSES } from '../lib/workflow';
 import Avatar from './Avatar';
@@ -108,6 +109,21 @@ export default function TicketBoard({ tickets, onMove, onUpdated }) {
         onUpdated?.(next);
     }
 
+    async function toggleMark(ticket, field) {
+        const next = { ...ticket, [field]: !ticket[field] };
+        onUpdated?.(next);
+
+        try {
+            const data = await api(`/concerns/${ticket.id}/marks`, {
+                method: 'PATCH',
+                body: { [field]: next[field] },
+            });
+            onUpdated?.(data.concern);
+        } catch {
+            onUpdated?.(ticket);
+        }
+    }
+
     return (
         <>
         <div
@@ -122,7 +138,9 @@ export default function TicketBoard({ tickets, onMove, onUpdated }) {
             onDragStart={handleBoardDragStart}
         >
             {BOARD_STATUSES.map((column) => {
-                const items = tickets.filter((ticket) => (ticket.board_status || 'pending') === column.key);
+                const items = tickets
+                    .filter((ticket) => (ticket.board_status || 'pending') === column.key)
+                    .sort((a, b) => Number(Boolean(b.is_priority)) - Number(Boolean(a.is_priority)));
                 const isOver = overStatus === column.key;
 
                 return (
@@ -157,6 +175,13 @@ export default function TicketBoard({ tickets, onMove, onUpdated }) {
                             ) : (
                                 items.map((ticket) => {
                                     const unread = unreadCommentCount(ticket, user?.id, seen);
+                                    const priority = Boolean(ticket.is_priority);
+                                    const coding = Boolean(ticket.is_coding);
+                                    const canPrioritize = user?.id === ticket.user_id;
+                                    const canCode = user?.role === 'developer';
+                                    const iconButton = priority
+                                        ? 'text-white hover:bg-white/10'
+                                        : 'text-muted hover:bg-black/[0.04] hover:text-ink';
 
                                     return (
                                     <article
@@ -165,21 +190,46 @@ export default function TicketBoard({ tickets, onMove, onUpdated }) {
                                         draggable
                                         onDragStart={(event) => handleDragStart(event, ticket)}
                                         onDragEnd={handleDragEnd}
-                                        className={`cursor-pointer rounded-xl border border-black/10 bg-white p-3 shadow-sm transition hover:border-black/20 ${
-                                            draggingId === ticket.id ? 'cursor-grabbing opacity-40' : ''
-                                        }`}
+                                        className={`cursor-pointer rounded-xl border p-3 shadow-sm transition ${
+                                            priority
+                                                ? 'border-[#333333] bg-[#333333] text-white'
+                                                : 'border-black/10 bg-white hover:border-black/20'
+                                        } ${draggingId === ticket.id ? 'cursor-grabbing opacity-40' : ''}`}
                                     >
                                         <div className="flex items-center gap-2.5">
-                                            <Avatar user={ticket.user} size="sm" />
-                                            <div className="min-w-0">
-                                                <p className="truncate text-sm font-medium text-ink">
+                                            <Avatar
+                                                user={ticket.user}
+                                                size="sm"
+                                                className={priority ? 'bg-white/15 text-white' : ''}
+                                            />
+                                            <div className="min-w-0 flex-1">
+                                                <p className={`truncate text-sm font-medium ${priority ? 'text-white' : 'text-ink'}`}>
                                                     {ticket.user?.name || 'Unknown'}
                                                 </p>
-                                                <p className="truncate text-xs text-muted">{ticket.ticket_no}</p>
+                                                <p className={`truncate text-xs ${priority ? 'text-white/70' : 'text-muted'}`}>
+                                                    {ticket.ticket_no}
+                                                </p>
                                             </div>
+                                            <button
+                                                type="button"
+                                                data-card-action
+                                                aria-label={priority ? 'Remove priority' : 'Mark as priority'}
+                                                title="Priority"
+                                                disabled={!canPrioritize}
+                                                onPointerDown={(event) => event.stopPropagation()}
+                                                onClick={() => toggleMark(ticket, 'is_priority')}
+                                                className={`shrink-0 rounded-lg p-1.5 ${iconButton} ${
+                                                    canPrioritize ? 'cursor-pointer' : 'cursor-default opacity-80'
+                                                }`}
+                                            >
+                                                <svg viewBox="0 0 24 24" className="size-4" fill={priority ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v18" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 4h11l-2.2 3.5L16 11H5" />
+                                                </svg>
+                                            </button>
                                         </div>
-                                        <p className="mt-2 text-sm text-ink">{ticket.title}</p>
-                                        <div className="mt-3 flex items-center gap-1 border-t border-black/10 pt-2.5">
+                                        <p className={`mt-2 text-sm ${priority ? 'text-white' : 'text-ink'}`}>{ticket.title}</p>
+                                        <div className={`mt-3 flex items-center gap-1 border-t pt-2.5 ${priority ? 'border-white/15' : 'border-black/10'}`}>
                                             <button
                                                 type="button"
                                                 data-card-action
@@ -187,7 +237,7 @@ export default function TicketBoard({ tickets, onMove, onUpdated }) {
                                                 title="View"
                                                 onPointerDown={(event) => event.stopPropagation()}
                                                 onClick={() => setDetailTicket(ticket)}
-                                                className="cursor-pointer rounded-lg p-1.5 text-muted hover:bg-black/[0.04] hover:text-ink"
+                                                className={`cursor-pointer rounded-lg p-1.5 ${iconButton}`}
                                             >
                                                 <svg
                                                     viewBox="0 0 24 24"
@@ -212,7 +262,7 @@ export default function TicketBoard({ tickets, onMove, onUpdated }) {
                                                 title="Comment"
                                                 onPointerDown={(event) => event.stopPropagation()}
                                                 onClick={() => openComments(ticket)}
-                                                className="relative cursor-pointer rounded-lg p-1.5 text-muted hover:bg-black/[0.04] hover:text-ink"
+                                                className={`relative cursor-pointer rounded-lg p-1.5 ${iconButton}`}
                                             >
                                                 <svg
                                                     viewBox="0 0 24 24"
@@ -233,6 +283,26 @@ export default function TicketBoard({ tickets, onMove, onUpdated }) {
                                                         {unread > 9 ? '9+' : unread}
                                                     </span>
                                                 ) : null}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                data-card-action
+                                                aria-label={coding ? 'Remove coding mark' : 'Mark as coding'}
+                                                title="Coding"
+                                                disabled={!canCode}
+                                                onPointerDown={(event) => event.stopPropagation()}
+                                                onClick={() => toggleMark(ticket, 'is_coding')}
+                                                className={`ml-auto shrink-0 rounded-lg border p-1.5 ${iconButton} ${
+                                                    coding
+                                                        ? priority
+                                                            ? 'border-white'
+                                                            : 'border-[#333333]'
+                                                        : 'border-transparent'
+                                                } ${canCode ? 'cursor-pointer' : 'cursor-default opacity-80'}`}
+                                            >
+                                                <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 8l-4 4 4 4M16 8l4 4-4 4" />
+                                                </svg>
                                             </button>
                                         </div>
                                     </article>

@@ -23,6 +23,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/concerns/{concern}', [ConcernController::class, 'show']);
     Route::patch('/concerns/{concern}/status', [ConcernController::class, 'updateStatus']);
     Route::patch('/concerns/{concern}/board', [ConcernController::class, 'updateBoard']);
+    Route::patch('/concerns/{concern}/marks', [ConcernController::class, 'updateMarks']);
     Route::post('/concerns/{concern}/comments', [CommentController::class, 'store']);
 });
 Route::view('/{any?}', 'app')->where('any', '.*');

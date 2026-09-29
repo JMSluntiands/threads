@@ -9,9 +9,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Support\StoredFile;
 
-#[Fillable(['user_id', 'company', 'ticket_no', 'title', 'body', 'image_path', 'user_status', 'developer_status', 'board_status'])]
+#[Fillable(['user_id', 'company', 'ticket_no', 'title', 'body', 'image_path', 'user_status', 'developer_status', 'board_status', 'is_priority', 'is_coding'])]
 class Concern extends Model
 {
+    protected function casts(): array
+    {
+        return [
+            'is_priority' => 'boolean',
+            'is_coding' => 'boolean',
+        ];
+    }
+
     public const COMPANIES = [
         'luntian',
         'bluinq',
