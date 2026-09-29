@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Storage;
+use App\Support\StoredFile;
 
 #[Fillable(['user_id', 'company', 'ticket_no', 'title', 'body', 'image_path', 'user_status', 'developer_status', 'board_status'])]
 class Concern extends Model
@@ -89,11 +89,7 @@ class Concern extends Model
 
     public function imageUrl(): ?string
     {
-        if (! $this->image_path || ! Storage::disk('public')->exists($this->image_path)) {
-            return null;
-        }
-
-        return Storage::disk('public')->url($this->image_path);
+        return StoredFile::url($this->image_path);
     }
 
     public function allowedUserTransitions(): array

@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\StoredFile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
@@ -48,16 +48,13 @@ class ProfileController extends Controller
         $user->email = $validated['email'];
 
         if ($request->boolean('remove_avatar') && $user->avatar_path) {
-            Storage::disk('public')->delete($user->avatar_path);
+            StoredFile::delete($user->avatar_path);
             $user->avatar_path = null;
         }
 
         if ($request->hasFile('avatar')) {
-            if ($user->avatar_path) {
-                Storage::disk('public')->delete($user->avatar_path);
-            }
-
-            $user->avatar_path = $request->file('avatar')->store('avatars', 'public');
+            StoredFile::delete($user->avatar_path);
+            $user->avatar_path = StoredFile::store($request->file('avatar'), 'avatars');
         }
 
         $user->save();

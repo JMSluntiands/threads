@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Storage;
+use App\Support\StoredFile;
 
 #[Fillable(['name', 'email', 'password', 'role', 'avatar_path'])]
 #[Hidden(['password', 'remember_token', 'avatar_path'])]
@@ -38,9 +38,7 @@ class User extends Authenticatable
 
     protected function avatarUrl(): Attribute
     {
-        return Attribute::get(fn () => $this->avatar_path
-            ? Storage::disk('public')->url($this->avatar_path)
-            : null);
+        return Attribute::get(fn () => StoredFile::url($this->avatar_path));
     }
 
     public function isDeveloper(): bool
