@@ -38,22 +38,6 @@
     }
 }
 
-@keyframes coding-type {
-    0%,
-    12% {
-        width: 0;
-    }
-
-    58%,
-    78% {
-        width: 10ch;
-    }
-
-    100% {
-        width: 0;
-    }
-}
-
 @keyframes coding-blink {
     0%,
     45% {
@@ -77,14 +61,11 @@
 
 .coding-word {
     display: inline-block;
-    overflow: hidden;
-    width: 0;
     border-right: 1.5px solid currentColor;
+    padding-right: 3px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 11px;
     line-height: 1;
     white-space: nowrap;
-    animation:
-        coding-type 3.2s steps(10, end) infinite,
-        coding-blink 0.7s step-end infinite;
+    animation: coding-blink 0.9s step-end infinite;
 }
